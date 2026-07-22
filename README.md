@@ -1,2 +1,174 @@
-# tradingscript
-a pinescript script to help you make better decisions
+# 📊 Confluence Scalper — Trend + Momentum + Volatility + HTF Bias
+
+A Pine Script v5 indicator for TradingView that grades every setup on a 0–10 confluence score, then auto-plots an entry, stop loss, and three take-profit levels the moment a graded signal fires. Built for traders who want a structured, rules-based way to combine trend, momentum, higher-timeframe bias, and volatility into a single readable signal — instead of eyeballing five indicators separately.
+
+Signals only fire on a **confirmed (closed) bar** — there's no repainting of the core score or signal trigger.
+
+> This is an independent, clean-room implementation — not a copy of any private/invite-only script. Built from scratch in Pine Script v5.
+
+## 📥 Installation
+
+This isn't published on TradingView's public script library, so you'll add it manually via the Pine Editor:
+
+1. Open [`Confluence_Scalper.pine`](./Confluence_Scalper.pine) in this repo and copy the full contents (use the "Raw" button on GitHub, then select all + copy).
+2. In TradingView, open any chart and click the **Pine Editor** tab at the bottom of the screen.
+3. Click **Open** → **New blank script**, select all the placeholder code, and delete it.
+4. Paste in the copied script.
+5. Click **Save**, name it, then click **Add to Chart**.
+6. Open the indicator's settings (⚙️ gear icon) to configure it for your instrument and timeframe — see [Key settings](#-key-settings-at-a-glance) below.
+
+## 📁 Repository contents
+
+| File | Description |
+|---|---|
+| `Confluence_Scalper.pine` | The indicator source code |
+| `README.md` | This file |
+
+---
+
+## ⚙️ How it works
+
+Every bar, the script scores the **bull** side and the **bear** side independently across five factors, and whichever side is ahead becomes the active direction:
+
+- 🔹 **Local trend** (2 pts) — fast EMA vs. slow EMA on your chart's timeframe
+- 🔹 **Higher-timeframe bias** (2 pts) — same EMA relationship, computed on a separate higher timeframe you choose
+- 🔹 **Momentum** (up to 2 pts) — RSI, scaled by distance from 50 (a borderline RSI near 50 barely moves the score)
+- 🔹 **MACD histogram** (2 pts) — confirms momentum direction independently of RSI
+- 🔹 **Trend strength** (2 pts) — ADX/DMI, but only awarded if ADX > 20 (i.e., a real trend actually exists)
+
+The winning side's total becomes the **score**, and the score maps to a **grade**:
+
+| Score | Grade |
+|---|---|
+| ≥ 9 | A+ |
+| ≥ 7 | A |
+| ≥ 5 | B |
+| < 5 | C |
+
+You set a **minimum grade** in settings — signals graded below that are simply not shown.
+
+---
+
+## 🎯 Core Signal (optional breakout gate)
+
+By default, a signal fires the moment the confluence score flips direction and clears your grade filter. That's fast, but it means the *trigger* is purely indicator-based — the score can flip without price actually doing anything abrupt.
+
+Turn on **Core Signal** and the script adds one more requirement: price must **close beyond the recent N-bar high/low** (lookback is adjustable) in the signal's direction before it's allowed to fire. Practically:
+
+- **Off** (default): score does the grading *and* the triggering. Faster, more signals, more noise.
+- **On**: score grades quality, Core Signal decides timing. Slower, fewer signals, each one backed by an actual breakout.
+
+There's no universally "correct" setting here — it's a real trade-off between speed and confirmation, so it's worth testing both on your instrument and timeframe.
+
+---
+
+## 📈 Entry, stop loss & 3 take-profits
+
+Once a signal fires, the script plots:
+
+- 🔵 **Entry** — the close of the signal bar
+- 🟥 **Stop loss** — ATR-based distance from entry
+- 🟩 **TP1 / TP2 / TP3** — three ATR-based targets (default ~1x / 2x / 3x ATR, giving roughly 1:1, 1:2, 1:3 risk:reward)
+
+All four ATR multiples are adjustable in settings.
+
+### 🌡️ Volatility-scaled stops (on by default)
+
+The table's **Volatility** reading (Low / Normal / High, based on current ATR vs. its own average) doesn't just sit there for reference — it actively scales your SL/TP distances:
+
+- **High volatility** → stops and targets widen automatically (default 1.5x), so noise doesn't stop you out early
+- **Low volatility** → stops and targets tighten (default 0.75x), so targets aren't unrealistically far for a quiet market
+- **Normal** → no adjustment (1.0x)
+
+You can disable this and use fixed ATR multiples instead if you prefer consistency over adaptiveness.
+
+---
+
+## 🔔 Alerts
+
+Six alert conditions are built in, each pickable individually in TradingView's "Create Alert" dialog:
+
+- ✅ Buy Signal
+- ✅ Sell Signal
+- ✅ Buy or Sell Signal (combined)
+- 🎯 TP1 / TP2 / TP3 Hit (each fires once, the first time price touches that level)
+- 🛑 Stop Loss Hit
+
+There's also a dynamic `alert()` message (selectable as "Any alert() function call") that includes the ticker, grade, star rating, and exact price — useful if you're piping alerts into a bot or webhook.
+
+### 👀 What to look for — example alert previews
+
+Here's what will actually land in your alert feed / notifications once a condition fires (example prices shown, yours will reflect the live market):
+
+> **Confluence Scalper: Buy Signal**
+> BUY signal (A ★★) on XAUUSD @ 4020.975
+
+> **Confluence Scalper: Sell Signal**
+> SELL signal (B ★) on XAUUSD @ 4016.690
+
+> **Confluence Scalper: TP1 Hit**
+> XAUUSD: TP1 hit @ 4025.260
+
+> **Confluence Scalper: TP2 Hit**
+> XAUUSD: TP2 hit @ 4029.545
+
+> **Confluence Scalper: TP3 Hit**
+> XAUUSD: TP3 hit @ 4033.829
+
+> **Confluence Scalper: Stop Loss Hit**
+> XAUUSD: Stop Loss hit @ 4016.690
+
+If you select the named conditions (Buy Signal, Sell Signal, TP1/TP2/TP3 Hit, Stop Loss Hit) in Create Alert, the message uses TradingView's own placeholders instead (e.g. "XAUUSD: TP1 hit at 4025.26"). Pick "Any alert() function call" if you want the richer version above with grade and star rating included.
+
+---
+
+## 🕰️ Setup history
+
+By default, only the most recent setup is shown on the chart. Turn on **Show Previous Setups** to keep a trail of past signal markers so you can visually audit how the last several setups played out. Everything else — the entry line/label, SL and TP1–3 levels, and the "TP1/TP2/TP3/SL hit" tags — is always cleared down to just the current, live setup the moment a new signal fires. Only the small direction + grade badge (e.g. `▲ BUY B ★`) persists across past setups, keeping history clean instead of piling up old price levels and hit tags.
+
+---
+
+## 🛠️ Key settings at a glance
+
+**Trend**
+- Fast / Slow EMA lengths
+- Higher-timeframe bias — see the timeframe tip below
+
+**Momentum / Strength**
+- RSI length, ADX/DMI length, MACD fast/slow/signal
+
+**Volatility**
+- ATR length, ATR averaging length (defines what counts as Low/Normal/High)
+
+**Signal / Risk**
+- Minimum grade to show a signal (C / B / A / A+)
+- SL and TP1–3 ATR multiples
+- Core Signal toggle + lookback
+- Volatility scaling toggle + Low/High multipliers
+
+**Display**
+- Show info table, signal markers, EMA lines
+- Show previous setups + how many to keep
+
+---
+
+## 💡 Tips
+
+- **Pair your chart timeframe with the HTF input.** As a rule of thumb, keep the higher-timeframe input roughly 6–12x your chart's timeframe. A 1H bias filter on a 1m chart is too slow to be meaningful — try 15–30min HTF instead. On a 5–15min chart, the 60min default is a reasonable starting point.
+- **Start with the minimum grade at "B"** and tighten to "A" or "A+" if you want fewer, higher-conviction signals. Loosening to "C" will show everything, including weak/mixed setups.
+- **If signals feel too reactive, try Core Signal.** It trades signal frequency for confirmation — good for choppier instruments, less useful on trending ones where you want to catch the move early.
+- **Watch the Volatility row.** A signal firing during "High" volatility has meaningfully wider stops — factor that into position sizing.
+- **Test before you trust it.** Run it on your instrument and timeframe with alerts on for a while before using it to size real trades.
+
+---
+
+## ⚠️ Things to look out for
+
+- This indicator does **not** predict the future and does **not** guarantee profitable trades. Past signal behavior is not indicative of future results.
+- On very low timeframes (1m), spread and slippage can meaningfully eat into tighter stops, especially in "Low volatility" mode where distances shrink.
+- The higher-timeframe bias uses `barmerge.lookahead_off` and only updates on confirmed HTF bars — expected non-repainting behavior, but it does mean the HTF read can lag behind fast intraday moves.
+- This is a **technical analysis tool**, not financial advice. Always apply your own risk management and trade at your own discretion.
+
+---
+
+**Disclaimer:** The information and publications provided by this script are not intended to be, and do not constitute, financial, investment, trading, or other advice or recommendations of any kind. Trading involves risk, and you are solely responsible for your own trading decisions.
