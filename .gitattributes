@@ -1,0 +1,7 @@
+# GitHub doesn't natively recognize Pine Script (.pine) for syntax
+# highlighting, so this maps it to Python's highlighter instead — closer
+# fit than JavaScript given Pine's indentation-based blocks (no braces).
+# Trade-off: this also makes the repo's language stats bar report the file
+# as "Python" instead of leaving it unclassified — GitHub doesn't offer a
+# way to borrow highlighting without also affecting the stats bar.
+*.pine linguist-language=Python
