@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GradeRunner — Trend + Momentum + Volatility + HTF Bias</title>
+<meta name="description" content="A Pine Script v5 indicator that grades every setup on a 0-10 confluence score, then auto-plots entry, stop loss, and three take-profit levels.">
+<style>
+  :root{
+    --bg:#0b0f0e;
+    --bg-alt:#101614;
+    --card:#131b19;
+    --border:#213029;
+    --text:#e8efec;
+    --text-dim:#9fb0a9;
+    --teal:#26A69A;
+    --teal-soft:rgba(38,166,154,0.12);
+    --red:#EF5350;
+    --blue:#2962FF;
+    --amber:#FFB300;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;
+  }
+  a{ color:var(--teal); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  .wrap{ max-width:880px; margin:0 auto; padding:0 24px; }
+
+  /* NAV */
+  nav{
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; background:rgba(11,15,14,0.9); backdrop-filter:blur(6px);
+    z-index:10;
+  }
+  nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; color:var(--text); }
+  .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--teal); box-shadow:0 0 12px var(--teal); }
+  nav ul{ display:flex; gap:24px; list-style:none; }
+  nav ul li a{ color:var(--text-dim); font-size:14px; font-weight:500; }
+  nav ul li a:hover{ color:var(--text); text-decoration:none; }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--teal); color:#04211d; font-weight:600; font-size:14px;
+    padding:9px 16px; border-radius:8px; border:1px solid var(--teal);
+  }
+  .btn:hover{ background:#2ec4b6; text-decoration:none; }
+  .btn.ghost{ background:transparent; color:var(--text); border:1px solid var(--border); }
+  .btn.ghost:hover{ background:var(--card); }
+
+  /* HERO */
+  header.hero{ padding:88px 0 64px; border-bottom:1px solid var(--border); }
+  .eyebrow{
+    display:inline-block; font-size:12px; font-weight:700; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--teal); background:var(--teal-soft);
+    border:1px solid rgba(38,166,154,0.35); padding:5px 12px; border-radius:100px;
+    margin-bottom:20px;
+  }
+  h1{ font-size:44px; line-height:1.15; font-weight:800; letter-spacing:-0.02em; margin-bottom:18px; }
+  h1 span{ color:var(--teal); }
+  .lede{ font-size:18px; color:var(--text-dim); max-width:620px; margin-bottom:32px; }
+  .hero-actions{ display:flex; gap:12px; flex-wrap:wrap; }
+  .badge-row{ display:flex; gap:10px; margin-top:28px; flex-wrap:wrap; }
+  .pill{
+    font-size:12px; color:var(--text-dim); border:1px solid var(--border);
+    padding:5px 10px; border-radius:6px; font-family:var(--mono);
+  }
+
+  section{ padding:64px 0; border-bottom:1px solid var(--border); }
+  section:last-of-type{ border-bottom:none; }
+  h2{ font-size:26px; font-weight:700; margin-bottom:10px; letter-spacing:-0.01em; }
+  .section-sub{ color:var(--text-dim); font-size:15px; max-width:640px; margin-bottom:36px; }
+
+  /* SCORE FACTORS */
+  .factor-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:32px; }
+  .factor{
+    background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px;
+  }
+  .factor .n{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:7px; background:var(--teal-soft); color:var(--teal);
+    font-weight:700; font-size:13px; margin-bottom:12px;
+  }
+  .factor h3{ font-size:15px; font-weight:600; margin-bottom:6px; }
+  .factor p{ font-size:13.5px; color:var(--text-dim); }
+
+  table.grade{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.grade th, table.grade td{ text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+  table.grade th{ color:var(--text-dim); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; }
+  table.grade td.grade-cell{ font-family:var(--mono); font-weight:700; color:var(--teal); }
+
+  /* FEATURE CARDS */
+  .feature-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
+  .feature{
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px;
+  }
+  .feature .icon{
+    width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    margin-bottom:16px; font-size:18px;
+  }
+  .icon.teal{ background:var(--teal-soft); color:var(--teal); }
+  .icon.red{ background:rgba(239,83,80,0.12); color:var(--red); }
+  .icon.blue{ background:rgba(41,98,255,0.12); color:var(--blue); }
+  .icon.amber{ background:rgba(255,179,0,0.12); color:var(--amber); }
+  .feature h3{ font-size:16px; font-weight:700; margin-bottom:8px; }
+  .feature p{ font-size:14px; color:var(--text-dim); }
+  .feature code{ font-family:var(--mono); background:var(--bg-alt); padding:2px 6px; border-radius:4px; font-size:12.5px; color:var(--text); }
+
+  /* ALERT PREVIEW */
+  .notif{
+    display:flex; gap:12px; align-items:flex-start; background:var(--card);
+    border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px;
+  }
+  .notif .nicon{
+    width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; font-size:13px; font-weight:700;
+  }
+  .notif .nicon.buy{ background:rgba(38,166,154,0.15); color:var(--teal); }
+  .notif .nicon.sell{ background:rgba(239,83,80,0.15); color:var(--red); }
+  .notif .title{ font-weight:600; font-size:13.5px; margin-bottom:2px; }
+  .notif .msg{ font-size:13px; color:var(--text-dim); font-family:var(--mono); }
+  .notif .time{ font-size:11.5px; color:var(--text-dim); margin-left:auto; white-space:nowrap; padding-top:2px; }
+  .notif-head{ display:flex; }
+
+  /* SETTINGS */
+  .settings-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; }
+  .settings-group h3{ font-size:14px; font-weight:700; color:var(--teal); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.03em; font-size:12px;}
+  .settings-group ul{ list-style:none; }
+  .settings-group li{ font-size:14px; color:var(--text-dim); padding:5px 0; border-bottom:1px dashed var(--border); }
+  .settings-group li:last-child{ border-bottom:none; }
+
+  /* INSTALL */
+  ol.steps{ counter-reset:step; list-style:none; }
+  ol.steps li{
+    counter-increment:step; position:relative; padding-left:40px; margin-bottom:18px; font-size:14.5px; color:var(--text-dim);
+  }
+  ol.steps li::before{
+    content:counter(step); position:absolute; left:0; top:-1px;
+    width:26px; height:26px; border-radius:50%; background:var(--teal-soft); color:var(--teal);
+    font-family:var(--mono); font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center;
+  }
+  ol.steps li b{ color:var(--text); }
+  code.block{
+    display:block; background:var(--bg-alt); border:1px solid var(--border); border-radius:8px;
+    padding:12px 14px; font-family:var(--mono); font-size:13px; color:var(--teal); margin-top:8px; overflow-x:auto;
+  }
+
+  /* CALLOUT */
+  .callout{
+    background:rgba(255,179,0,0.06); border:1px solid rgba(255,179,0,0.25); border-radius:12px;
+    padding:18px 20px; font-size:14px; color:var(--text-dim);
+  }
+  .callout b{ color:var(--amber); }
+
+  footer{ padding:40px 0 60px; }
+  footer p{ font-size:12.5px; color:var(--text-dim); max-width:700px; }
+  footer .links{ margin-top:18px; display:flex; gap:18px; font-size:13.5px; }
+
+  @media (max-width:640px){
+    h1{ font-size:32px; }
+    nav ul{ display:none; }
+    header.hero{ padding:56px 0 48px; }
+    section{ padding:48px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> GradeRunner</div>
+    <ul>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#alerts">Alerts</a></li>
+      <li><a href="#settings">Settings</a></li>
+      <li><a href="#install">Install</a></li>
+    </ul>
+    <a class="btn ghost" href="https://github.com/shrekbane/graderunner" target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Pine Script v5 · TradingView Indicator</span>
+    <h1>Grade every setup.<br>Trade the <span>graded</span> ones.</h1>
+    <p class="lede">GradeRunner scores every bar across five factors — trend, higher-timeframe bias, momentum, MACD, and trend strength — into a single A+/A/B/C grade, then auto-plots entry, stop loss, and three take-profit levels the moment a qualifying signal fires.</p>
+    <div class="hero-actions">
+      <a class="btn" href="#install">Get the script</a>
+      <a class="btn ghost" href="#how-it-works">See how it scores</a>
+    </div>
+    <div class="badge-row">
+      <span class="pill">Non-repainting</span>
+      <span class="pill">Clean-room build</span>
+      <span class="pill">ATR-based risk management</span>
+      <span class="pill">Light/dark theme adaptive</span>
+    </div>
+  </div>
+</header>
+
+<section id="how-it-works">
+  <div class="wrap">
+    <h2>How the score works</h2>
+    <p class="section-sub">Every confirmed bar, GradeRunner scores the bull side and the bear side independently across five factors. Whichever side is ahead becomes the active direction, and its total becomes the score out of 10.</p>
+
+    <div class="factor-grid">
+      <div class="factor">
+        <span class="n">1</span>
+        <h3>Local trend</h3>
+        <p>Fast EMA vs. slow EMA on your chart's own timeframe. 2 points.</p>
+      </div>
+      <div class="factor">
+        <span class="n">2</span>
+        <h3>Higher-timeframe bias</h3>
+        <p>Same EMA relationship computed on a separate, larger timeframe you choose. 2 points.</p>
+      </div>
+      <div class="factor">
+        <span class="n">3</span>
+        <h3>Momentum (RSI)</h3>
+        <p>Scaled by distance from 50 — a borderline RSI barely moves the score. Up to 2 points.</p>
+      </div>
+      <div class="factor">
+        <span class="n">4</span>
+        <h3>MACD histogram</h3>
+        <p>Confirms momentum direction independently of RSI. 2 points.</p>
+      </div>
+      <div class="factor">
+        <span class="n">5</span>
+        <h3>Trend strength (ADX/DMI)</h3>
+        <p>Only awarded if ADX &gt; 20 — i.e. a real trend actually exists. 2 points.</p>
+      </div>
+    </div>
+
+    <table class="grade">
+      <thead><tr><th>Score</th><th>Grade</th></tr></thead>
+      <tbody>
+        <tr><td>≥ 9 / 10</td><td class="grade-cell">A+</td></tr>
+        <tr><td>≥ 7 / 10</td><td class="grade-cell">A</td></tr>
+        <tr><td>≥ 5 / 10</td><td class="grade-cell">B</td></tr>
+        <tr><td>&lt; 5 / 10</td><td class="grade-cell">C</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Built-in risk management</h2>
+    <p class="section-sub">Not just a signal — a full setup, drawn automatically the moment a graded signal fires.</p>
+
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="icon blue">◆</div>
+        <h3>Auto entry / SL / 3 TPs</h3>
+        <p>ATR-based stop loss and three take-profits (~1x / 2x / 3x ATR by default, roughly 1:1, 1:2, 1:3 risk:reward), plotted live on the chart.</p>
+      </div>
+      <div class="feature">
+        <div class="icon teal">▲</div>
+        <h3>Core Signal breakout gate</h3>
+        <p>Optional stricter trigger — price must close beyond the recent N-bar high/low before a signal fires, on top of the grade filter.</p>
+      </div>
+      <div class="feature">
+        <div class="icon amber">〜</div>
+        <h3>Volatility-scaled stops</h3>
+        <p>SL/TP distances automatically widen in <code>High</code> volatility (1.5x) and tighten in <code>Low</code> volatility (0.75x).</p>
+      </div>
+      <div class="feature">
+        <div class="icon red">⏱</div>
+        <h3>Alert Hours</h3>
+        <p>Restrict alerts to a chosen trading session and timezone — the chart keeps updating 24/7 either way, only notifications are gated.</p>
+      </div>
+      <div class="feature">
+        <div class="icon teal">☰</div>
+        <h3>Minimalist info table</h3>
+        <p>Trade status, HTF trend, score, momentum, trend strength, and volatility — six rows, all live data, theme-adaptive.</p>
+      </div>
+      <div class="feature">
+        <div class="icon blue">↺</div>
+        <h3>Setup history</h3>
+        <p>Optionally keep a trail of past signal badges on the chart so you can audit how recent setups played out.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="alerts">
+  <div class="wrap">
+    <h2>Alerts, ready to wire up</h2>
+    <p class="section-sub">Six alert conditions, each individually selectable in TradingView's Create Alert dialog. Here's what actually lands in your notifications:</p>
+
+    <div class="notif">
+      <div class="nicon buy">▲</div>
+      <div style="flex:1">
+        <div class="notif-head"><div class="title">GradeRunner: Buy Signal</div><div class="time">09:23</div></div>
+        <div class="msg">BUY signal (A ★★) on XAUUSD @ 4020.975</div>
+      </div>
+    </div>
+    <div class="notif">
+      <div class="nicon sell">▼</div>
+      <div style="flex:1">
+        <div class="notif-head"><div class="title">GradeRunner: Sell Signal</div><div class="time">09:31</div></div>
+        <div class="msg">SELL signal (B ★) on XAUUSD @ 4016.690</div>
+      </div>
+    </div>
+    <div class="notif">
+      <div class="nicon buy">✓</div>
+      <div style="flex:1">
+        <div class="notif-head"><div class="title">GradeRunner: TP1 Hit</div><div class="time">09:38</div></div>
+        <div class="msg">XAUUSD: TP1 hit @ 4025.260</div>
+      </div>
+    </div>
+    <div class="notif">
+      <div class="nicon sell">!</div>
+      <div style="flex:1">
+        <div class="notif-head"><div class="title">GradeRunner: Stop Loss Hit</div><div class="time">10:12</div></div>
+        <div class="msg">XAUUSD: Stop Loss hit @ 4016.690</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="settings">
+  <div class="wrap">
+    <h2>Key settings</h2>
+    <p class="section-sub">Everything is adjustable — nothing here is hardcoded to one instrument or timeframe.</p>
+
+    <div class="settings-grid">
+      <div class="settings-group">
+        <h3>Trend</h3>
+        <ul>
+          <li>Fast / Slow EMA lengths</li>
+          <li>Higher-timeframe bias</li>
+        </ul>
+      </div>
+      <div class="settings-group">
+        <h3>Momentum / Strength</h3>
+        <ul>
+          <li>RSI length</li>
+          <li>ADX/DMI length</li>
+          <li>MACD fast / slow / signal</li>
+        </ul>
+      </div>
+      <div class="settings-group">
+        <h3>Signal / Risk</h3>
+        <ul>
+          <li>Minimum grade (C / B / A / A+)</li>
+          <li>SL and TP1–3 ATR multiples</li>
+          <li>Core Signal toggle + lookback</li>
+          <li>Volatility scaling + multipliers</li>
+        </ul>
+      </div>
+      <div class="settings-group">
+        <h3>Alert Hours</h3>
+        <ul>
+          <li>Only alert during selected hours</li>
+          <li>Trading session (day-of-week picker)</li>
+          <li>Timezone dropdown</li>
+        </ul>
+      </div>
+      <div class="settings-group">
+        <h3>Display</h3>
+        <ul>
+          <li>Info table, signal markers, EMA lines</li>
+          <li>Show previous setups + max count</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Installation</h2>
+    <p class="section-sub">Not published on TradingView's public script library — add it manually via the Pine Editor.</p>
+
+    <ol class="steps">
+      <li>Open <b>GradeRunner.pine</b> in the repo and copy the full contents (use the "Raw" button on GitHub, then select all + copy).</li>
+      <li>In TradingView, open any chart and click the <b>Pine Editor</b> tab at the bottom of the screen.</li>
+      <li>Click <b>Open → New blank script</b>, select all the placeholder code, and delete it.</li>
+      <li>Paste in the copied script.</li>
+      <li>Click <b>Save</b>, name it, then click <b>Add to Chart</b>.</li>
+      <li>Open the indicator's settings (⚙️) to configure it for your instrument and timeframe.</li>
+    </ol>
+
+    <div class="callout">
+      <b>Tip:</b> pair your chart timeframe with the higher-timeframe input at roughly a 6–12x ratio. A 60min HTF bias works well on a 5–15min chart; drop it to 15–30min if you're scalping on 1–5min charts.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Disclaimer:</b> GradeRunner is a technical analysis tool, not financial advice. It does not predict the future and does not guarantee profitable trades. Past signal behavior is not indicative of future results. Always apply your own risk management and trade at your own discretion.</p>
+    <div class="links">
+      <a href="https://github.com/shrekbane/graderunner" target="_blank" rel="noopener">GitHub repo</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#install">Installation</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
