@@ -4,6 +4,7 @@ All notable changes to GradeRunner are logged here, newest first. Entries are wr
 
 ## 2026-07-23
 
+- `feat(brand)`: add `graderunner.png` (user-designed brand artwork) to the repo — shown at the top of `README.md` and referenced from `README.md`'s repository contents table. Also generated `favicon.png` (180x180, downscaled from the artwork) and wired it up as `index.html`'s favicon/apple-touch-icon.
 - `style(pages)`: shorten the hero's Telegram CTA from "Just follow the signals →" to "Get the signals →", parallel with the "Get the script" button next to it.
 - `feat(pages)`: add links to the public Telegram channel (t.me/graderunner) for users who just want to follow signals without installing the script — a "Telegram" button in the nav bar, a "Just follow the signals →" CTA in the hero (replacing the old "See how it scores" hero button, which is still reachable via the nav link), and a highlighted callout at the top of the Alerts section.
 - `chore(repo)`: add `.gitattributes` mapping `*.pine` files to Python's syntax highlighter, since GitHub doesn't natively recognize Pine Script. Trade-off: this also makes the repo's language stats bar report the file as Python rather than leaving it unclassified — there's no GitHub option to get one without the other.
