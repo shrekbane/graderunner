@@ -4,6 +4,7 @@ All notable changes to GradeRunner are logged here, newest first. Entries are wr
 
 ## 2026-07-23
 
+- `style(colors)`: introduce a shared, light/dark-theme-safe color palette (`palBull` teal, `palBear` red, `palEntry` blue, `palNeutral` derived from `chart.fg_color`, `palEmaFast`/`palEmaSlow` amber/violet) and apply it everywhere — entry/SL/TP lines and labels, the signal badge, TP/SL hit tags, EMA lines, and the table's Trend row. Replaces the previous near-black TP color and dark maroon SL color, which had poor contrast on dark-theme charts.
 - `chore(rename)`: rename the project from the working title "Confluence Scalper" to **GradeRunner** — script file renamed `Confluence_Scalper.pine` → `GradeRunner.pine`, `indicator()` title/shorttitle updated, README updated throughout. No functional changes.
 - `refactor(table)`: trim info table from 9 rows to 6 — drop the title/branding row, Core Signal row, and Alerts row (all static settings echoes, not live data). Underlying Core Signal gate and Alert Hours gating logic are unaffected; only their table display was removed.
 - `feat(table)`: change Trend row to reflect higher-timeframe bias specifically (`htfBull`) instead of the combined 5-factor confluence direction, so it's a standalone "bigger picture" read independent of Score.
