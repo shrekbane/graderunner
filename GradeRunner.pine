@@ -53,6 +53,14 @@ useVolScaling = input.bool(true, "Scale SL/TP by Volatility", group=grpSignal)
 lowVolFactor  = input.float(0.75, "Low Volatility Multiplier",  step=0.05, group=grpSignal)
 highVolFactor = input.float(1.5,  "High Volatility Multiplier", step=0.05, group=grpSignal)
 
+// One-trade-at-a-time gate: while ON (default), a new signal can only
+// override the currently tracked setup once that setup has hit TP1 (locked
+// in first profit) or SL (stopped out). Before that point, new signals are
+// simply ignored and the ongoing trade is left to run toward TP2/TP3. While
+// OFF, any qualifying signal always overrides immediately, regardless of
+// how far the current trade has progressed (the original behavior).
+lockUntilTP1OrSL = input.bool(true, "Lock New Signals Until TP1 or SL Hit", group=grpSignal)
+
 // Alert Hours: restricts when alert()/alertcondition() are allowed to fire —
 // e.g. skip the Asian session, or only alert during your own trading hours.
 // This only gates alerts. The score, badge, table, and drawn levels keep
@@ -198,13 +206,32 @@ corePasses = not coreSignalOn or (direction == 1 ? coreBullTrigger : direction =
 inSession = alertTimezone == "" ? not na(time(timeframe.period, alertSession)) : not na(time(timeframe.period, alertSession, alertTimezone))
 alertsAllowed = not restrictAlertHours or inSession
 
+// ---------------- TRADE STATE FLAGS (declared early for signal gating) ----------------
+// These need to exist before newSignal is computed below, since the
+// one-trade-at-a-time gate reads inTrade/tp1Hit/slHit. The rest of the trade
+// state (entry/SL/TP prices, tradeDir) is declared further down where it's
+// first assigned — only the flags needed for gating live here.
+var bool inTrade = false
+var bool tp1Hit  = false
+var bool tp2Hit  = false
+var bool tp3Hit  = false
+var bool slHit   = false
+
+// While the lock is on, a new signal is only allowed to override the current
+// setup once it's already hit TP1 or SL. Note this reads last bar's
+// tp1Hit/slHit (they haven't been updated for *this* bar yet — that happens
+// in the TP/SL hit detection block further down) so there's a natural
+// one-bar lag: override eligibility starts the bar *after* TP1/SL is
+// touched, not the same bar. That keeps everything non-repainting.
+canOverride = not lockUntilTP1OrSL or not inTrade or tp1Hit or slHit
+
 // ---------------- SIGNAL TRIGGER (fires only on confirmed bar close) ----------------
 // lastDir only advances when a signal actually fires (not just when the raw
 // score direction flips). That way, if Core Signal is on and the breakout
 // hasn't confirmed yet, the script keeps checking on every subsequent bar —
 // it doesn't get "stuck" thinking this direction was already handled.
 var int lastDir = 0
-newSignal = barstate.isconfirmed and direction != 0 and direction != lastDir and passesFilter and corePasses
+newSignal = barstate.isconfirmed and direction != 0 and direction != lastDir and passesFilter and corePasses and canOverride
 
 if newSignal
     lastDir := direction
@@ -223,13 +250,13 @@ alertcondition(sellSignal,              title="Sell Signal",        message="{{t
 alertcondition(buySignal or sellSignal, title="Buy or Sell Signal",  message="{{ticker}}: new signal at {{close}}")
 
 // ---------------- TRADE STATE TRACKING ----------------
+// (inTrade is declared earlier, alongside the other gating flags.)
 var float entryPrice = na
 var float slPrice = na
 var float tp1Price = na
 var float tp2Price = na
 var float tp3Price = na
 var int   tradeDir = 0
-var bool  inTrade = false
 
 // Arrays (not single handles) so multiple past setups can be kept on chart
 // at once when "Show Previous Setups" is enabled.
@@ -327,11 +354,7 @@ if newSignal
         alert(alertMsg, alert.freq_once_per_bar_close)
 
 // ---------------- TP / SL HIT DETECTION & ALERTS ----------------
-var bool tp1Hit = false
-var bool tp2Hit = false
-var bool tp3Hit = false
-var bool slHit  = false
-
+// (tp1Hit/tp2Hit/tp3Hit/slHit are declared earlier, alongside inTrade.)
 if newSignal
     tp1Hit := false
     tp2Hit := false
