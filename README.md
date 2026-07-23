@@ -1,5 +1,7 @@
 # 📊 GradeRunner — Trend + Momentum + Volatility + HTF Bias
 
+![GradeRunner](./graderunner.png)
+
 A Pine Script v5 indicator for TradingView that grades every setup on a 0–10 confluence score, then auto-plots an entry, stop loss, and three take-profit levels the moment a graded signal fires. Built for traders who want a structured, rules-based way to combine trend, momentum, higher-timeframe bias, and volatility into a single readable signal — instead of eyeballing five indicators separately.
 
 Signals only fire on a **confirmed (closed) bar** — there's no repainting of the core score or signal trigger.
@@ -23,6 +25,7 @@ This isn't published on TradingView's public script library, so you'll add it ma
 |---|---|
 | `GradeRunner.pine` | The indicator source code |
 | `README.md` | This file |
+| `graderunner.png` | Brand artwork, shown at the top of this file |
 
 ---
 
