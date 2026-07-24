@@ -4,6 +4,7 @@ A commit backlog for GradeRunner — one line per change, newest at the top, gro
 
 ## 2026-07-24
 
+- `feat(alerts)`: re-add the multi-line Buy/Sell `alert()` message (Entry/TP1/TP2/SL each on their own line, TP3 omitted) on top of the commit-6db787b baseline, prompted by a live case where a signal's alerted entry price (captured from the real-time close at the moment of firing) differed slightly from the entry price the chart later redrew after a reload (recalculated against the data vendor's settled historical close for that bar) — the multi-line message means the exact levels that actually fired are always readable straight from the notification, independent of the chart's redraw. Documented in `README.md` (updated alert preview examples, and a new note explaining why the alert message is the authoritative record vs. the chart's drawn lines) and `index.html` (updated Buy/Sell notification preview cards to the multi-line format, plus a matching TP3-omitted note) — caught before it could repeat the earlier miss where `index.html` was forgotten when this same format was first added.
 - `feat(table)`: add "Table Text Size" setting (Tiny/Small/Normal/Large) so both the info table and grade stats table can shrink for phone/small-screen use.
 - `feat(brand)`: re-add `index.html`'s favicon/apple-touch-icon wiring to the existing `favicon.png`.
 - `feat(brand)`: re-add `graderunner.png` brand artwork to the top of `README.md` and its repo contents table.

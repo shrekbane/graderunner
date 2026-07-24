@@ -375,7 +375,14 @@ if newSignal
         array.push(badgeLbls, label.new(bar_index, direction == 1 ? low : high, badgeText, style=direction == 1 ? label.style_label_up : label.style_label_down, color=badgeCol, textcolor=color.white, size=size.small))
 
     if alertsAllowed
-        alertMsg = direction == 1 ? "BUY signal (" + grade + " " + stars + ") on " + syminfo.ticker + " @ " + str.tostring(entryPrice, format.mintick) : "SELL signal (" + grade + " " + stars + ") on " + syminfo.ticker + " @ " + str.tostring(entryPrice, format.mintick)
+        // Multi-line so the exact levels are readable straight from the
+        // notification, without needing to cross-check the chart — useful
+        // since the chart's drawn entry/SL/TP can drift slightly from what
+        // actually fired if the indicator is later reloaded and Pine
+        // recalculates history against a settled (vs. live-streamed) close
+        // for that bar. TP3 is intentionally left out: by the time price
+        // reaches it, the user should already be watching the chart.
+        alertMsg = (direction == 1 ? "BUY" : "SELL") + " signal (" + grade + " " + stars + ") on " + syminfo.ticker + "\nEntry: " + str.tostring(entryPrice, format.mintick) + "\nTP1: " + str.tostring(tp1Price, format.mintick) + "\nTP2: " + str.tostring(tp2Price, format.mintick) + "\nSL: " + str.tostring(slPrice, format.mintick)
         alert(alertMsg, alert.freq_once_per_bar_close)
 
 // ---------------- TP / SL HIT DETECTION & ALERTS ----------------

@@ -108,17 +108,25 @@ Six alert conditions are built in, each pickable individually in TradingView's "
 - 🎯 TP1 / TP2 / TP3 Hit (each fires once, the first time price touches that level)
 - 🛑 Stop Loss Hit
 
-There's also a dynamic `alert()` message (selectable as "Any alert() function call") that includes the ticker, grade, star rating, and exact price — useful if you're piping alerts into a bot or webhook.
+There's also a dynamic, multi-line `alert()` message (selectable as "Any alert() function call") that spells out the entry, TP1, TP2, and SL levels on their own lines — so the exact numbers to act on are readable straight from the notification, without needing to cross-check the chart. This matters in practice: if the indicator is later removed and re-added (or the chart otherwise reloads), Pine recalculates history against each bar's *settled* close, which can drift a pip or two from the *live* close that was actually used when the alert fired — so the chart's redrawn entry/SL/TP lines aren't guaranteed to exactly match what a past alert said. The alert message itself is the authoritative record of what actually fired.
 
 ### 👀 What to look for — example alert previews
 
 Here's what will actually land in your alert feed / notifications once a condition fires (example prices shown, yours will reflect the live market):
 
 > **GradeRunner: Buy Signal**
-> BUY signal (A ★★) on XAUUSD @ 4020.975
+> BUY signal (A ★★) on XAUUSD
+> Entry: 4020.975
+> TP1: 4025.260
+> TP2: 4029.545
+> SL: 4016.690
 
 > **GradeRunner: Sell Signal**
-> SELL signal (B ★) on XAUUSD @ 4016.690
+> SELL signal (B ★) on XAUUSD
+> Entry: 4016.690
+> TP1: 4012.405
+> TP2: 4008.120
+> SL: 4020.975
 
 > **GradeRunner: TP1 Hit**
 > XAUUSD: TP1 hit @ 4025.260
@@ -131,6 +139,8 @@ Here's what will actually land in your alert feed / notifications once a conditi
 
 > **GradeRunner: Stop Loss Hit**
 > XAUUSD: Stop Loss hit @ 4016.690
+
+TP3 is intentionally left out of the Buy/Sell alert message — by the time price reaches it, you should already be watching the chart.
 
 If you select the named conditions (Buy Signal, Sell Signal, TP1/TP2/TP3 Hit, Stop Loss Hit) in Create Alert, the message uses TradingView's own placeholders instead (e.g. "XAUUSD: TP1 hit at 4025.26"). Pick "Any alert() function call" if you want the richer version above with grade and star rating included.
 
