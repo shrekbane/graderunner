@@ -185,7 +185,7 @@ If you select the named conditions (Buy Signal, Sell Signal, TP1/TP2/TP3 Hit, St
 
 A signal firing means the script's own conditions were met — it doesn't mean every signal is worth taking. Three quick checks before acting on one:
 
-1. **Check the Data Window factor values.** If one or two read near zero while the rest are maxed, the grade is being carried by fewer factors than it looks.
+1. **Check the Trend Strength row in the info table.** If it reads "Weak," there's no real trend behind the move.
 2. **Look at the plotted S/R zone.** Is this the first rejection at that level, or has price rejected it there before?
 3. **Look for a rejection candle at the zone** — marked automatically on the chart via the Engulfing Candle Markers, so you don't have to spot it yourself. Confirms price is actually turning, not just touching the level.
 
