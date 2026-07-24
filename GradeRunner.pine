@@ -41,6 +41,11 @@ srShowZones = input.bool(true, "Plot S/R Zone Lines on Chart", group=grpSR)
 // default behavior now, rather than opt-in.
 srGateOn = input.bool(true, "Require S/R Flip Reject to Confirm Entry", group=grpSR)
 srConfirmBars = input.int(10, "Confirmation Window (bars)", minval=1, group=grpSR, active=srGateOn)
+// Purely visual, no effect on scoring/gating — supports the manual "look for a
+// rejection candle at the zone" step from the signal checklist (see README),
+// since that's a judgment call meant to be eyeballed on the chart, not
+// automated. On by default so it's visible without extra setup.
+srShowEngulf = input.bool(true, "Show Engulfing Candle Markers", group=grpSR)
 
 grpSignal = "Signal / Risk"
 minGradeInput = input.string("B", "Minimum Grade to Show Signal", options=["C","B","A","A+"], group=grpSignal)
@@ -634,6 +639,18 @@ plot(showTrendLines ? emaSlow : na, "Slow EMA", color=palEmaSlow)
 
 // (Signal markers are drawn as the green/red "▲ Grade ★★" badge above, matching
 // the reference screenshot's marker style rather than a plain plotshape.)
+
+// ---------------- ENGULFING CANDLE MARKERS (visual aid, no gating) ----------------
+// A bullish engulfing candle is a green candle whose body fully swallows the
+// prior red candle's body; bearish is the mirror image. Purely a visual aid
+// for manually checking the "was there a rejection candle at the zone"
+// checklist item — does not feed into scoring, gating, or the S/R confirmation
+// logic above (which uses its own reject definition based on wicks/closes
+// relative to the zone, not engulfing specifically).
+bullEngulfMarker = close[1] < open[1] and close > open and open <= close[1] and close > open[1]
+bearEngulfMarker = close[1] > open[1] and close < open and open >= close[1] and close < open[1]
+plotshape(srShowEngulf and bullEngulfMarker, title="Bullish Engulfing", style=shape.triangleup,   location=location.belowbar, color=palBull, size=size.tiny)
+plotshape(srShowEngulf and bearEngulfMarker, title="Bearish Engulfing", style=shape.triangledown, location=location.abovebar, color=palBear, size=size.tiny)
 
 // ---------------- FACTOR DIAGNOSTICS (Data Window only) ----------------
 // Net point contribution (bull minus bear, -2..+2 range) per confluence

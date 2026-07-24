@@ -181,6 +181,16 @@ If you select the named conditions (Buy Signal, Sell Signal, TP1/TP2/TP3 Hit, St
 
 ---
 
+## ✅ Before you follow a signal
+
+A signal firing means the script's own conditions were met — it doesn't mean every signal is worth taking. Three quick checks before acting on one:
+
+1. **Check the Data Window factor values.** If one or two read near zero while the rest are maxed, the grade is being carried by fewer factors than it looks.
+2. **Look at the plotted S/R zone.** Is this the first rejection at that level, or has price rejected it there before?
+3. **Look for a rejection candle at the zone** — marked automatically on the chart via the Engulfing Candle Markers, so you don't have to spot it yourself. Confirms price is actually turning, not just touching the level.
+
+---
+
 ## ⏰ Alert Hours (optional)
 
 By default, alerts can fire any time a signal or TP/SL hit occurs, 24/7. Turn on **Only Alert During Selected Hours** if you only want to be pinged during your own trading hours (e.g. skip overnight or the session you don't trade):
